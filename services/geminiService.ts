@@ -2,7 +2,8 @@ import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { MenuAnalysisResult } from "../types";
 
 // Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.VITE_API_KEY });
+// In Vite/GitHub Pages, we use import.meta.env instead of process.env
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
 
 const analysisSchema: Schema = {
   type: Type.OBJECT,

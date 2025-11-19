@@ -1,6 +1,6 @@
 /**
  * Resizes and compresses an image file to minimize data usage.
- * Target: Max dimension 1024px, JPEG quality 0.6.
+ * Target: Max dimension 800px (optimized for speed), JPEG quality 0.6.
  */
 export const compressImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -13,7 +13,8 @@ export const compressImage = (file: File): Promise<string> => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const MAX_SIZE = 1024;
+        // Reduced from 1024 to 800 for faster Gemini processing
+        const MAX_SIZE = 800;
 
         if (width > height) {
           if (width > MAX_SIZE) {

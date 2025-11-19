@@ -2,7 +2,7 @@ export interface Dish {
   originalName: string;
   translatedName: string;
   description: string;
-  ingredients: string[];
+  // ingredients removed for performance
   price?: string;
   estimatedYen?: number;
 }

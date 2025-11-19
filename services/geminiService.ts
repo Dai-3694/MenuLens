@@ -23,12 +23,7 @@ const analysisSchema: Schema = {
         properties: {
           originalName: { type: Type.STRING, description: "The name of the dish as it appears on the menu (keep original language)." },
           translatedName: { type: Type.STRING, description: "Natural Japanese translation of the dish name." },
-          description: { type: Type.STRING, description: "A short, appetizing description of the dish strictly in Japanese (approx 30-40 chars)." },
-          ingredients: { 
-            type: Type.ARRAY, 
-            items: { type: Type.STRING },
-            description: "List of main ingredients in Japanese."
-          },
+          description: { type: Type.STRING, description: "A brief, simple Japanese description of the dish (max 30 chars)." },
           price: { 
             type: Type.STRING, 
             description: "The price string as found on the menu including symbol (e.g., '$15.00', '€12', '250 THB'). Return empty string if not found." 
@@ -38,7 +33,7 @@ const analysisSchema: Schema = {
             description: "Estimated price in Japanese Yen (JPY) calculated based on the currency and an approximate current exchange rate. Return 0 if price is not found." 
           }
         },
-        required: ["originalName", "translatedName", "description", "ingredients", "price", "estimatedYen"]
+        required: ["originalName", "translatedName", "description", "price", "estimatedYen"]
       }
     }
   },
@@ -62,14 +57,14 @@ export const analyzeMenuImage = async (base64Image: string): Promise<MenuAnalysi
             }
           },
           {
-            text: "Analyze this menu image. Extract the dishes. If the text is blurry or not a menu, try your best to identify food items. Output in JSON format."
+            text: "Analyze this menu image. Extract dishes. Output in JSON format."
           }
         ]
       },
       config: {
         responseMimeType: "application/json",
         responseSchema: analysisSchema,
-        systemInstruction: "You are a helpful travel food guide for Japanese tourists. Analyze the menu image. Output strictly in Japanese. \n1. Identify dishes, translate names to Japanese, and provide appetizing Japanese descriptions.\n2. Ensure the cuisine type is a standard Japanese term.\n3. Extract the price for each dish.\n4. Identify the currency based on the menu context (country symbols, language) and convert the price to Japanese Yen (JPY) using an approximate current exchange rate."
+        systemInstruction: "You are a fast travel food guide. Analyze the menu image. Output strictly in Japanese. \n1. Identify dishes, translate names to Japanese, and provide very brief Japanese descriptions.\n2. Ensure the cuisine type is a standard Japanese term.\n3. Extract the price for each dish.\n4. Convert the price to Japanese Yen (JPY) using an approximate current exchange rate."
       }
     });
 

@@ -53,15 +53,7 @@ export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
           )}
         </div>
         
-        <p className="text-gray-300 text-sm mb-3">{dish.description}</p>
-        
-        <div className="flex flex-wrap gap-1 mb-4">
-          {dish.ingredients.map((ing, idx) => (
-            <span key={idx} className="text-[10px] uppercase tracking-wider text-teal-200 bg-teal-900/30 px-2 py-0.5 rounded-full border border-teal-900/50">
-              {ing}
-            </span>
-          ))}
-        </div>
+        <p className="text-gray-300 text-sm mb-4">{dish.description}</p>
 
         {imageUrl ? (
           <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black mb-3">

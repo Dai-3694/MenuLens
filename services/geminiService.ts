@@ -2,7 +2,6 @@ import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { MenuAnalysisResult } from "../types";
 
 // Initialize Gemini Client
-// The API key must be obtained exclusively from the environment variable process.env.API_KEY.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const analysisSchema: Schema = {

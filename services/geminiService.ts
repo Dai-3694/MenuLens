@@ -45,9 +45,9 @@ export const analyzeMenuImage = async (base64Image: string): Promise<MenuAnalysi
   }
 
   try {
-    // Use gemini-1.5-flash for speed and cost
+    // Use gemini-2.5-flash for best performance and multimodal capabilities
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: analysisSchema,

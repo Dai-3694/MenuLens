@@ -1,35 +1,34 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { MenuAnalysisResult } from "../types";
 
 // Validate API Key immediately
 const apiKey = import.meta.env.VITE_API_KEY;
 
-// Initialize Gemini Client only if key exists to prevent immediate crash, 
-// but check inside functions
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+// Initialize Gemini Client
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
-const analysisSchema: Schema = {
-  type: Type.OBJECT,
+const analysisSchema = {
+  type: SchemaType.OBJECT,
   properties: {
     cuisineType: { 
-      type: Type.STRING, 
+      type: SchemaType.STRING, 
       description: "The general cuisine type of the menu in Japanese (e.g., イタリア料理, タイ料理, 居酒屋). Do not use English." 
     },
     dishes: {
-      type: Type.ARRAY,
+      type: SchemaType.ARRAY,
       description: "List of identified dishes from the menu.",
       items: {
-        type: Type.OBJECT,
+        type: SchemaType.OBJECT,
         properties: {
-          originalName: { type: Type.STRING, description: "The name of the dish as it appears on the menu (keep original language)." },
-          translatedName: { type: Type.STRING, description: "Natural Japanese translation of the dish name." },
-          description: { type: Type.STRING, description: "A brief, simple Japanese description of the dish (max 30 chars)." },
+          originalName: { type: SchemaType.STRING, description: "The name of the dish as it appears on the menu (keep original language)." },
+          translatedName: { type: SchemaType.STRING, description: "Natural Japanese translation of the dish name." },
+          description: { type: SchemaType.STRING, description: "A brief, simple Japanese description of the dish (max 30 chars)." },
           price: { 
-            type: Type.STRING, 
+            type: SchemaType.STRING, 
             description: "The price string as found on the menu including symbol (e.g., '$15.00', '€12', '250 THB'). Return empty string if not found." 
           },
           estimatedYen: { 
-            type: Type.INTEGER, 
+            type: SchemaType.INTEGER, 
             description: "Estimated price in Japanese Yen (JPY) calculated based on the currency and an approximate current exchange rate. Return 0 if price is not found." 
           }
         },
@@ -41,34 +40,35 @@ const analysisSchema: Schema = {
 };
 
 export const analyzeMenuImage = async (base64Image: string): Promise<MenuAnalysisResult> => {
-  if (!ai || !apiKey) {
+  if (!genAI || !apiKey) {
     throw new Error("API_KEY_MISSING");
   }
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', // Fast and lightweight
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              mimeType: 'image/jpeg',
-              data: base64Image
-            }
-          },
-          {
-            text: "Analyze this menu image. Extract dishes. Output in JSON format."
-          }
-        ]
-      },
-      config: {
+    // Use gemini-1.5-flash for speed and cost
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: {
         responseMimeType: "application/json",
         responseSchema: analysisSchema,
-        systemInstruction: "You are a fast travel food guide. Analyze the menu image. Output strictly in Japanese. \n1. Identify dishes, translate names to Japanese, and provide very brief Japanese descriptions.\n2. Ensure the cuisine type is a standard Japanese term.\n3. Extract the price for each dish.\n4. Convert the price to Japanese Yen (JPY) using an approximate current exchange rate."
-      }
+      },
+      systemInstruction: "You are a fast travel food guide. Analyze the menu image. Output strictly in Japanese. \n1. Identify dishes, translate names to Japanese, and provide very brief Japanese descriptions.\n2. Ensure the cuisine type is a standard Japanese term.\n3. Extract the price for each dish.\n4. Convert the price to Japanese Yen (JPY) using an approximate current exchange rate."
     });
 
-    const text = response.text;
+    // Remove the data:image/jpeg;base64, prefix if present for the SDK
+    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
+
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: "image/jpeg",
+        },
+      },
+      "Analyze this menu image. Extract dishes. Output in JSON format."
+    ]);
+
+    const text = result.response.text();
     if (!text) throw new Error("No response from AI");
     
     return JSON.parse(text) as MenuAnalysisResult;
@@ -79,22 +79,35 @@ export const analyzeMenuImage = async (base64Image: string): Promise<MenuAnalysi
 };
 
 export const generateDishImage = async (dishDescription: string): Promise<string> => {
-  if (!ai || !apiKey) {
+  if (!apiKey) {
     throw new Error("API_KEY_MISSING");
   }
 
   try {
-    // Using Imagen 3 for image generation
-    const response = await ai.models.generateImages({
-      model: 'imagen-3.0-generate-001',
-      prompt: `A delicious, professional food photography shot of: ${dishDescription}. High resolution, appetizing lighting, centered composition, shallow depth of field.`,
-      config: {
-        numberOfImages: 1,
-        aspectRatio: '1:1'
+    // Using REST API for Imagen 3 to ensure browser compatibility
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: `A delicious, professional food photography shot of: ${dishDescription}. High resolution, appetizing lighting, centered composition, shallow depth of field.`,
+          numberOfImages: 1,
+          aspectRatio: '1:1'
+        })
       }
-    });
+    );
 
-    const imageBytes = response.generatedImages?.[0]?.image?.imageBytes;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || `HTTP Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const imageBytes = data.generatedImages?.[0]?.image?.imageBytes;
+    
     if (!imageBytes) throw new Error("Failed to generate image");
 
     return `data:image/jpeg;base64,${imageBytes}`;

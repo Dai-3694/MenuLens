@@ -10,19 +10,19 @@ interface DishCardProps {
 export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleVisualize = async () => {
     if (imageUrl || loading) return;
     setLoading(true);
-    setError(false);
+    setError(null);
     try {
       // Create a rich prompt for the image generator
       const prompt = `${dish.originalName} (${dish.translatedName}). ${dish.description}`;
       const url = await generateDishImage(prompt);
       setImageUrl(url);
-    } catch (err) {
-      setError(true);
+    } catch (err: any) {
+      setError(err.message || "Unknown error");
     } finally {
       setLoading(false);
     }
@@ -40,7 +40,7 @@ export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
               {dish.originalName}
             </span>
           </div>
-          
+
           {dish.estimatedYen && dish.estimatedYen > 0 && (
             <div className="text-right shrink-0 flex flex-col items-end">
               <div className="text-lg font-bold text-teal-400 whitespace-nowrap">
@@ -52,7 +52,7 @@ export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
             </div>
           )}
         </div>
-        
+
         <p className="text-gray-300 text-sm mb-4">{dish.description}</p>
 
         {imageUrl ? (
@@ -65,8 +65,8 @@ export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
               onClick={handleVisualize}
               disabled={loading}
               className={`w-full py-3 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors
-                ${loading 
-                  ? 'bg-gray-700 cursor-wait' 
+                ${loading
+                  ? 'bg-gray-700 cursor-wait'
                   : 'bg-teal-600 hover:bg-teal-500 text-white active:bg-teal-700'
                 }`}
             >
@@ -81,14 +81,21 @@ export const DishCard: React.FC<DishCardProps> = ({ dish }) => {
                 </>
               )}
             </button>
-            {error && <p className="text-red-400 text-xs text-center mt-2">画像の生成に失敗しました。</p>}
+            {error && (
+              <div className="mt-2 text-center">
+                <p className="text-red-400 text-xs">画像の生成に失敗しました。</p>
+                <p className="text-gray-500 text-[10px] font-mono mt-1 bg-black/20 p-1 rounded inline-block max-w-full break-all">
+                  {error}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         <div className="text-right">
-          <a 
-            href={googleSearchUrl} 
-            target="_blank" 
+          <a
+            href={googleSearchUrl}
+            target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center text-xs text-gray-400 hover:text-teal-400 transition-colors gap-1"
           >

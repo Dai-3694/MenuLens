@@ -52,6 +52,13 @@ export const analyzeMenuImage = async (base64Image: string): Promise<MenuAnalysi
         responseMimeType: "application/json",
         responseSchema: analysisSchema,
       },
+      // Relax safety settings to prevent blocking food content
+      safetySettings: [
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+      ],
       systemInstruction: "You are a fast travel food guide. Analyze the menu image. Output strictly in Japanese. \n1. Identify dishes, translate names to Japanese, and provide very brief Japanese descriptions.\n2. Ensure the cuisine type is a standard Japanese term.\n3. Extract the price for each dish.\n4. Convert the price to Japanese Yen (JPY) using an approximate current exchange rate."
     });
 
@@ -71,8 +78,15 @@ export const analyzeMenuImage = async (base64Image: string): Promise<MenuAnalysi
     const text = result.response.text();
     if (!text) throw new Error("No response from AI");
 
-    // Clean the response if it contains markdown code blocks
-    const cleanedText = text.replace(/```json\n?|\n?```/g, "").trim();
+    // Robust JSON extraction: Find the first '{' and last '}'
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+
+    if (firstBrace === -1 || lastBrace === -1) {
+      throw new Error("Invalid JSON response: No JSON object found");
+    }
+
+    const cleanedText = text.substring(firstBrace, lastBrace + 1);
 
     return JSON.parse(cleanedText) as MenuAnalysisResult;
   } catch (error) {

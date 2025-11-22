@@ -20,7 +20,7 @@ const App: React.FC = () => {
     } catch (error: any) {
       console.error(error);
       setAppState(AppState.ERROR);
-      
+
       // Handle specific errors
       if (error.message === 'API_KEY_MISSING') {
         setErrorMessage("設定エラー: APIキーが見つかりません。GitHubのSecretsに「VITE_API_KEY」を設定し、Actionを再実行してください。");
@@ -31,7 +31,7 @@ const App: React.FC = () => {
       } else if (error.message?.includes('403') || error.message?.includes('permission')) {
         setErrorMessage("APIキーの権限エラーです。Google Cloud Consoleでウェブサイトの制限設定（URL）を確認してください。");
       } else {
-        setErrorMessage("メニューの解析に失敗しました。インターネット接続を確認するか、写真が鮮明か確認してください。");
+        setErrorMessage(`メニューの解析に失敗しました: ${error.message || "不明なエラー"}`);
       }
     }
   };
@@ -55,7 +55,7 @@ const App: React.FC = () => {
             </div>
             <h1 className="font-bold text-lg tracking-tight">MenuLens</h1>
           </div>
-          <button 
+          <button
             onClick={handleRetry}
             className="text-sm text-gray-400 hover:text-white"
           >
@@ -75,7 +75,7 @@ const App: React.FC = () => {
             <div>
               <h2 className="text-xl font-bold text-teal-400 mb-2">メニューを解析中...</h2>
               <p className="text-gray-400 text-sm">
-                AIが文字を読み取り、料理を識別しています。<br/>
+                AIが文字を読み取り、料理を識別しています。<br />
                 数秒お待ちください...
               </p>
             </div>
@@ -103,7 +103,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="mt-8 text-center">
-               <button 
+              <button
                 onClick={handleRetry}
                 className="px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full font-medium transition shadow-lg"
               >
@@ -124,7 +124,13 @@ const App: React.FC = () => {
             <p className="text-gray-400 mb-8 text-sm max-w-xs">
               {errorMessage || "メニューの解析に失敗しました。インターネット接続を確認するか、写真が鮮明か確認してください。"}
             </p>
-            <button 
+            {/* Developer details for debugging */}
+            {errorMessage && (
+              <p className="text-xs text-gray-600 font-mono bg-black/20 p-2 rounded max-w-xs break-all">
+                Debug: {errorMessage}
+              </p>
+            )}
+            <button
               onClick={handleRetry}
               className="px-6 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-500"
             >

@@ -96,40 +96,49 @@ export const analyzeMenuImage = async (base64Image: string): Promise<MenuAnalysi
 };
 
 export const generateDishImage = async (dishDescription: string): Promise<string> => {
-  if (!apiKey) {
+  if (!genAI || !apiKey) {
     throw new Error("API_KEY_MISSING");
   }
 
   try {
-    // Using REST API for Imagen 3 to ensure browser compatibility
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImages?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: `A delicious, professional food photography shot of: ${dishDescription}. High resolution, appetizing lighting, centered composition, shallow depth of field.`,
-          numberOfImages: 1,
-          aspectRatio: '1:1'
-        })
-      }
-    );
+    // Use gemini-2.5-flash-image which supports image generation and works with the SDK (solving CORS)
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || `HTTP Error: ${response.status}`);
+    const prompt = `Generate a delicious, professional food photography shot of: ${dishDescription}. High resolution, appetizing lighting, centered composition, shallow depth of field.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+
+    // Check for inline image data in the response
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      throw new Error("No candidates returned");
     }
 
-    const data = await response.json();
-    const imageBytes = data.generatedImages?.[0]?.image?.imageBytes;
+    const parts = candidates[0].content.parts;
+    if (!parts || parts.length === 0) {
+      throw new Error("No content parts returned");
+    }
 
-    if (!imageBytes) throw new Error("Failed to generate image");
+    // Find the part with inlineData (image)
+    const imagePart = parts.find((part: any) => part.inlineData);
 
-    return `data:image/jpeg;base64,${imageBytes}`;
-  } catch (error) {
+    if (!imagePart || !imagePart.inlineData) {
+      // Fallback: Check if it returned text saying it can't generate
+      const textPart = parts.find((part: any) => part.text);
+      if (textPart) {
+        throw new Error(`Model returned text instead of image: ${textPart.text.substring(0, 50)}...`);
+      }
+      throw new Error("No image data found in response");
+    }
+
+    return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+  } catch (error: any) {
     console.error("Error generating dish image:", error);
+    // Enhance error message for better debugging
+    if (error.message?.includes('404') || error.message?.includes('not found')) {
+      throw new Error("Model not found or not available. Please check API key permissions.");
+    }
     throw error;
   }
 };

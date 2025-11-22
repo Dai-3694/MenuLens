@@ -10,9 +10,9 @@ const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 const analysisSchema = {
   type: SchemaType.OBJECT,
   properties: {
-    cuisineType: { 
-      type: SchemaType.STRING, 
-      description: "The general cuisine type of the menu in Japanese (e.g., イタリア料理, タイ料理, 居酒屋). Do not use English." 
+    cuisineType: {
+      type: SchemaType.STRING,
+      description: "The general cuisine type of the menu in Japanese (e.g., イタリア料理, タイ料理, 居酒屋). Do not use English."
     },
     dishes: {
       type: SchemaType.ARRAY,
@@ -23,13 +23,13 @@ const analysisSchema = {
           originalName: { type: SchemaType.STRING, description: "The name of the dish as it appears on the menu (keep original language)." },
           translatedName: { type: SchemaType.STRING, description: "Natural Japanese translation of the dish name." },
           description: { type: SchemaType.STRING, description: "A brief, simple Japanese description of the dish (max 30 chars)." },
-          price: { 
-            type: SchemaType.STRING, 
-            description: "The price string as found on the menu including symbol (e.g., '$15.00', '€12', '250 THB'). Return empty string if not found." 
+          price: {
+            type: SchemaType.STRING,
+            description: "The price string as found on the menu including symbol (e.g., '$15.00', '€12', '250 THB'). Return empty string if not found."
           },
-          estimatedYen: { 
-            type: SchemaType.INTEGER, 
-            description: "Estimated price in Japanese Yen (JPY) calculated based on the currency and an approximate current exchange rate. Return 0 if price is not found." 
+          estimatedYen: {
+            type: SchemaType.INTEGER,
+            description: "Estimated price in Japanese Yen (JPY) calculated based on the currency and an approximate current exchange rate. Return 0 if price is not found."
           }
         },
         required: ["originalName", "translatedName", "description", "price", "estimatedYen"]
@@ -46,7 +46,7 @@ export const analyzeMenuImage = async (base64Image: string): Promise<MenuAnalysi
 
   try {
     // Use gemini-1.5-flash for speed and cost
-    const model = genAI.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
@@ -70,8 +70,11 @@ export const analyzeMenuImage = async (base64Image: string): Promise<MenuAnalysi
 
     const text = result.response.text();
     if (!text) throw new Error("No response from AI");
-    
-    return JSON.parse(text) as MenuAnalysisResult;
+
+    // Clean the response if it contains markdown code blocks
+    const cleanedText = text.replace(/```json\n?|\n?```/g, "").trim();
+
+    return JSON.parse(cleanedText) as MenuAnalysisResult;
   } catch (error) {
     console.error("Error analyzing menu:", error);
     throw error;
@@ -107,7 +110,7 @@ export const generateDishImage = async (dishDescription: string): Promise<string
 
     const data = await response.json();
     const imageBytes = data.generatedImages?.[0]?.image?.imageBytes;
-    
+
     if (!imageBytes) throw new Error("Failed to generate image");
 
     return `data:image/jpeg;base64,${imageBytes}`;

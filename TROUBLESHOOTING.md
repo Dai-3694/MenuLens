@@ -58,7 +58,6 @@
 
 1. **ローカルで`.env`ファイルを作成してテスト**:
    ```
-   VITE_API_KEY=your_gemini_key
    VITE_GOOGLE_SEARCH_API_KEY=your_google_key
    VITE_GOOGLE_SEARCH_ENGINE_ID=your_engine_id
    ```

@@ -8,7 +8,7 @@ GitHubリポジトリの「Settings」→「Secrets and variables」→「Action
 
 1. **VITE_API_KEY**
    - Google Gemini APIキー
-   - 既存の設定
+   - [Google AI Studio](https://aistudio.google.com/app/apikey)などで取得
 
 2. **VITE_GOOGLE_SEARCH_API_KEY**
    - Google Custom Search API キー

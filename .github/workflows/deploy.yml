@@ -33,6 +33,8 @@ jobs:
         run: npm run build
         env:
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_GOOGLE_SEARCH_API_KEY: ${{ secrets.VITE_GOOGLE_SEARCH_API_KEY }}
+          VITE_GOOGLE_SEARCH_ENGINE_ID: ${{ secrets.VITE_GOOGLE_SEARCH_ENGINE_ID }}
 
       - name: Fix Page Routing
         run: touch ./dist/.nojekyll
